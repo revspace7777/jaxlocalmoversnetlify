@@ -122,6 +122,24 @@ gtag("config", "AW-17189356235");
 </script>
 """
 
+# Field name mappings to clean up names with spaces and capitalization
+field_replacements = {
+    'name="Name"': 'name="name"',
+    'name="Email"': 'name="email"',
+    'name="Phone"': 'name="phone"',
+    'name="Preferred Contact"': 'name="preferred_contact"',
+    'name="Pick Up Address"': 'name="pickup_address"',
+    'name="Delivery Address"': 'name="delivery_address"',
+    'name="Message"': 'name="message"',
+    'data-name="Name"': 'data-name="name"',
+    'data-name="Email"': 'data-name="email"',
+    'data-name="Phone"': 'data-name="phone"',
+    'data-name="Preferred Contact"': 'data-name="preferred_contact"',
+    'data-name="Pick Up Address"': 'data-name="pickup_address"',
+    'data-name="Delivery Address"': 'data-name="delivery_address"',
+    'data-name="Message"': 'data-name="message"',
+}
+
 for filepath in html_files:
     rel_path = os.path.relpath(filepath, base_dir)
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
@@ -203,7 +221,22 @@ for filepath in html_files:
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="estimate" novalidate="novalidate" action="/thank-you/">'
     )
 
-    # --- 4. Update the Parameter Capture Script ---
+    # --- 4. Clean up Legacy Honeypot / Spam protection elements ---
+    # Match the hidden Akismet honeypot paragraph block and delete it
+    content = re.sub(
+        r'<p style="display: none !important;"><label>Δ.*?</script></p>\s*',
+        '',
+        content,
+        flags=re.DOTALL
+    )
+    # Match the response output div and delete it
+    content = content.replace('<div aria-hidden="true" class="wpcf7-response-output"></div>', '')
+
+    # --- 5. Clean up Form Input Names (avoiding spaces / capitalization) ---
+    for old, new in field_replacements.items():
+        content = content.replace(old, new)
+
+    # --- 6. Update the Parameter Capture Script ---
     # Search for any <script> ... paramsToCapture ... </script> block and replace it
     script_pattern = re.compile(
         r'<script>\s*document\.addEventListener\(\'DOMContentLoaded\',.*?paramsToCapture.*?</script>',
@@ -213,7 +246,7 @@ for filepath in html_files:
         content = script_pattern.sub(NEW_TRACKING_SCRIPT, content)
         print(f"Updated parameter capture script in: {rel_path}")
 
-    # --- 5. Landing Page Special Adjustments (/l/ pages) ---
+    # --- 7. Landing Page Special Adjustments (/l/ pages) ---
     if rel_path in ["l\\index.html", "l/index.html", "l\\local-move\\index.html", "l/local-move/index.html"]:
         # A. Inject Google Tag + forwarding snippet if not already loaded
         if "google_gtagjs-js" not in content:
@@ -256,7 +289,7 @@ for filepath in html_files:
             content = content.replace(old_submit_js_match.group(0), NEW_SUBMIT_HANDLER_JS)
             print(f"Updated AJAX submit handler to redirect to /thank-you/ in: {rel_path}")
 
-    # --- 6. Write back changes if modified ---
+    # --- 8. Write back changes if modified ---
     if content != original_content:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)

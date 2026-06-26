@@ -1635,7 +1635,7 @@ gtag("config", "AW-17189356235");
           else if (phone && phone.value.trim().replace(/\D/g, '').length < 10) { showError(phone, 'Please enter a valid phone number'); isValid = false; }
           if (email && email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { showError(email, 'Please enter a valid email address'); isValid = false; }
 
-                              if (isValid) {
+                                        if (isValid) {
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
               submitBtn.textContent = '✓ Sending...';
