@@ -4,7 +4,7 @@ import shutil
 
 base_dir = r"c:\Users\heath\jaxlocalmovers"
 
-# 1. Delete CallRail assets directory if it exists
+# 1. Delete CallRail assets directory if it exists (legacy local files)
 callrail_dir = os.path.join(base_dir, "external_assets", "cdn.callrail.com")
 if os.path.exists(callrail_dir):
     shutil.rmtree(callrail_dir)
@@ -122,6 +122,9 @@ gtag("config", "AW-17189356235");
 </script>
 """
 
+# New CallRail tracking script
+CALLRAIL_SCRIPT = '<script type="text/javascript" src="//cdn.callrail.com/companies/447336876/8f5a960ecc72f78cc761/12/swap.js"></script>'
+
 # Field name mappings to clean up names with spaces and capitalization
 field_replacements = {
     'name="Name"': 'name="name"',
@@ -147,57 +150,48 @@ for filepath in html_files:
 
     original_content = content
 
-    # --- 1. Strip Contact Form 7 Resources ---
-    # Stylesheet link
+    # --- 1. Strip legacy Contact Form 7 Resources ---
     content = re.sub(
         r'<link[^>]*href="[^"]*contact-form-7/includes/css/styles_c09882a6\.css[^"]*"[^>]*/>\s*',
         '',
         content
     )
-    # swv-js script tag
     content = re.sub(
         r'<script[^>]*id="swv-js"[^>]*></script>\s*',
         '',
         content
     )
-    # contact-form-7-js-before block
     content = re.sub(
         r'<script[^>]*id="contact-form-7-js-before"[^>]*>.*?</script>\s*',
         '',
         content,
         flags=re.DOTALL
     )
-    # contact-form-7-js script tag
     content = re.sub(
         r'<script[^>]*id="contact-form-7-js"[^>]*></script>\s*',
         '',
         content
     )
-    # wpcf7-recaptcha-js script tag
     content = re.sub(
         r'<script[^>]*id="wpcf7-recaptcha-js"[^>]*></script>\s*',
         '',
         content
     )
-    # wpcf7-recaptcha-js-before block
     content = re.sub(
         r'<script[^>]*id="wpcf7-recaptcha-js-before"[^>]*>.*?</script>\s*',
         '',
         content,
         flags=re.DOTALL
     )
-    # googlesitekit-events-provider-contact-form-7-js script tag
     content = re.sub(
         r'<script[^>]*id="googlesitekit-events-provider-contact-form-7-js"[^>]*></script>\s*',
         '',
         content
     )
 
-    # --- 2. Strip CallRail Script and Comment ---
-    # Comment
+    # --- 2. Strip legacy local CallRail assets ---
     content = content.replace("<!-- CallRail WordPress Integration -->\n", "")
     content = content.replace("<!-- CallRail WordPress Integration -->", "")
-    # swapjs-js script tag
     content = re.sub(
         r'<script[^>]*id="swapjs-js"[^>]*></script>\s*',
         '',
@@ -205,39 +199,33 @@ for filepath in html_files:
     )
 
     # --- 3. Set Action="/thank-you/" on Standard Forms ---
-    # Homepage form (name="quote")
     content = content.replace(
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="quote" novalidate="novalidate">',
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="quote" novalidate="novalidate" action="/thank-you/">'
     )
-    # Contact page form (name="contact")
     content = content.replace(
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="contact" novalidate="novalidate">',
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="contact" novalidate="novalidate" action="/thank-you/">'
     )
-    # Special offers form (name="estimate")
     content = content.replace(
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="estimate" novalidate="novalidate">',
         '<form aria-label="Contact form" class="wpcf7-form init" data-netlify="true" data-status="init" method="POST" name="estimate" novalidate="novalidate" action="/thank-you/">'
     )
 
-    # --- 4. Clean up Legacy Honeypot / Spam protection elements ---
-    # Match the hidden Akismet honeypot paragraph block and delete it
+    # --- 4. Clean up legacy honeypots / spam wrappers ---
     content = re.sub(
         r'<p style="display: none !important;"><label>Δ.*?</script></p>\s*',
         '',
         content,
         flags=re.DOTALL
     )
-    # Match the response output div and delete it
     content = content.replace('<div aria-hidden="true" class="wpcf7-response-output"></div>', '')
 
-    # --- 5. Clean up Form Input Names (avoiding spaces / capitalization) ---
+    # --- 5. Clean up Form Input Names ---
     for old, new in field_replacements.items():
         content = content.replace(old, new)
 
     # --- 6. Update the Parameter Capture Script ---
-    # Search for any <script> ... paramsToCapture ... </script> block and replace it
     script_pattern = re.compile(
         r'<script>\s*document\.addEventListener\(\'DOMContentLoaded\',.*?paramsToCapture.*?</script>',
         re.DOTALL
@@ -289,7 +277,13 @@ for filepath in html_files:
             content = content.replace(old_submit_js_match.group(0), NEW_SUBMIT_HANDLER_JS)
             print(f"Updated AJAX submit handler to redirect to /thank-you/ in: {rel_path}")
 
-    # --- 8. Write back changes if modified ---
+    # --- 8. Inject New CallRail CDN Script before </body> ---
+    if "8f5a960ecc72f78cc761/12/swap.js" not in content:
+        # We replace the closing </body> tag with the script tag followed by </body>
+        content = content.replace("</body>", CALLRAIL_SCRIPT + "\n</body>")
+        print(f"Injected new CallRail CDN script in: {rel_path}")
+
+    # --- 9. Write back changes if modified ---
     if content != original_content:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
