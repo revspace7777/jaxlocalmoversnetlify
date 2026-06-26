@@ -709,27 +709,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const paramsToCapture = ['gclid', 'msclkid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
     const urlParams = new URLSearchParams(window.location.search);
     
-    // Save URL parameters to sessionStorage safely
+    // Save URL parameters to sessionStorage and localStorage safely
     paramsToCapture.forEach(function(param) {
         if (urlParams.has(param)) {
+            const val = urlParams.get(param);
             try {
-                sessionStorage.setItem(param, urlParams.get(param));
+                sessionStorage.setItem(param, val);
             } catch (e) {
                 console.warn('sessionStorage is not accessible:', e);
+            }
+            try {
+                localStorage.setItem(param, val);
+            } catch (e) {
+                console.warn('localStorage is not accessible:', e);
             }
         }
     });
 
     // Save landing page and session start time safely
     try {
-        if (!sessionStorage.getItem('landing_page')) {
+        if (!sessionStorage.getItem('landing_page') && !localStorage.getItem('landing_page')) {
             sessionStorage.setItem('landing_page', window.location.href);
+            localStorage.setItem('landing_page', window.location.href);
         }
-        if (!sessionStorage.getItem('session_start_time')) {
+        if (!sessionStorage.getItem('session_start_time') && !localStorage.getItem('session_start_time')) {
             sessionStorage.setItem('session_start_time', Date.now());
+            localStorage.setItem('session_start_time', Date.now());
         }
     } catch (e) {
-        console.warn('sessionStorage is not accessible:', e);
+        console.warn('Storage is not accessible:', e);
     }
 
     const populateField = (name, value) => {
@@ -744,14 +752,14 @@ document.addEventListener('DOMContentLoaded', function() {
     paramsToCapture.forEach(function(param) {
         let value = '';
         try {
-            value = sessionStorage.getItem(param) || '';
+            value = sessionStorage.getItem(param) || localStorage.getItem(param) || '';
         } catch (e) {}
         populateField(param, value);
     });
 
     let landingPage = '';
     try {
-        landingPage = sessionStorage.getItem('landing_page') || '';
+        landingPage = sessionStorage.getItem('landing_page') || localStorage.getItem('landing_page') || '';
     } catch (e) {}
     
     populateField('landing_page', landingPage);
@@ -764,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function() {
             let startTime = Date.now();
             try {
-                startTime = parseInt(sessionStorage.getItem('session_start_time') || Date.now());
+                startTime = parseInt(sessionStorage.getItem('session_start_time') || localStorage.getItem('session_start_time') || Date.now());
             } catch (e) {}
             const timeOnSiteSeconds = Math.round((Date.now() - startTime) / 1000);
             populateField('time_on_site', timeOnSiteSeconds + ' seconds');
@@ -773,6 +781,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<!-- Google tag (gtag.js) snippet added by Site Kit -->
+<!-- Google Analytics snippet added by Site Kit -->
+<!-- Google Ads snippet added by Site Kit -->
+<script async="" id="google_gtagjs-js" src="https://www.googletagmanager.com/gtag/js?id=GT-TBBG4KD"></script>
+<script id="google_gtagjs-js-after">
+window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}
+gtag("set","linker",{"domains":["jaxlocalmovers.com"]});
+gtag("js", new Date());
+gtag("set", "developer_id.dZTNiMT", true);
+gtag("config", "GT-TBBG4KD");
+gtag("config", "AW-17189356235");
+ window._googlesitekit = window._googlesitekit || {}; window._googlesitekit.throttledEvents = []; window._googlesitekit.gtagEvent = (name, data) => { var key = JSON.stringify( { name, data } ); if ( !! window._googlesitekit.throttledEvents[ key ] ) { return; } window._googlesitekit.throttledEvents[ key ] = true; setTimeout( () => { delete window._googlesitekit.throttledEvents[ key ]; }, 5 ); gtag( "event", name, { ...data, event_source: "site-kit" } ); }; 
+//# sourceURL=google_gtagjs-js-after
+</script>
+<script>
+  gtag('config', 'AW-17189356235/XOaUCJKfvvAaEMuFw4RA', {
+    'phone_conversion_number': '(904) 239-2439'
+  });
+</script>
+
 </head>
 <body>
 
@@ -1607,10 +1635,9 @@ document.addEventListener('DOMContentLoaded', function() {
           else if (phone && phone.value.trim().replace(/\D/g, '').length < 10) { showError(phone, 'Please enter a valid phone number'); isValid = false; }
           if (email && email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { showError(email, 'Please enter a valid email address'); isValid = false; }
 
-                    if (isValid) {
+                              if (isValid) {
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
-              const originalText = submitBtn.textContent;
               submitBtn.textContent = '✓ Sending...';
               submitBtn.disabled = true;
 
@@ -1624,15 +1651,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: new URLSearchParams(formData).toString()
               })
               .then(() => {
-                submitBtn.textContent = '✓ Quote Request Sent!';
-                submitBtn.style.opacity = '0.7';
-                setTimeout(function () {
-                  submitBtn.textContent = originalText;
-                  submitBtn.disabled = false;
-                  submitBtn.style.opacity = '';
-                  form.reset();
-                  if (form.closest('.modal-content')) closeQuoteModal();
-                }, 3000);
+                window.location.href = '/thank-you/';
               })
               .catch(err => {
                 console.error('Form submission failed:', err);
