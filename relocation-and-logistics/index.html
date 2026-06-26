@@ -138,17 +138,28 @@ gtag("config", "AW-17189356235");
 document.addEventListener('DOMContentLoaded', function() {
     const paramsToCapture = ['gclid', 'msclkid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Save URL parameters to sessionStorage safely
     paramsToCapture.forEach(function(param) {
         if (urlParams.has(param)) {
-            sessionStorage.setItem(param, urlParams.get(param));
+            try {
+                sessionStorage.setItem(param, urlParams.get(param));
+            } catch (e) {
+                console.warn('sessionStorage is not accessible:', e);
+            }
         }
     });
 
-    if (!sessionStorage.getItem('landing_page')) {
-        sessionStorage.setItem('landing_page', window.location.href);
-    }
-    if (!sessionStorage.getItem('session_start_time')) {
-        sessionStorage.setItem('session_start_time', Date.now());
+    // Save landing page and session start time safely
+    try {
+        if (!sessionStorage.getItem('landing_page')) {
+            sessionStorage.setItem('landing_page', window.location.href);
+        }
+        if (!sessionStorage.getItem('session_start_time')) {
+            sessionStorage.setItem('session_start_time', Date.now());
+        }
+    } catch (e) {
+        console.warn('sessionStorage is not accessible:', e);
     }
 
     const populateField = (name, value) => {
@@ -159,36 +170,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    const fieldMapping = {
-        'gclid': 'Google Click ID',
-        'msclkid': 'Bing Click ID',
-        'fbclid': 'Meta Click ID',
-        'utm_source': 'UTM Source',
-        'utm_medium': 'UTM Medium',
-        'utm_campaign': 'UTM Campaign',
-        'utm_term': 'UTM Keyword',
-        'utm_content': 'UTM Content',
-        'landing_page': 'Landing Page',
-        'referrer': 'Referrer',
-        'screen_size': 'Screen Size',
-        'user_agent': 'User Agent'
-    };
-
-    Object.keys(fieldMapping).forEach(function(param) {
-        populateField(fieldMapping[param], sessionStorage.getItem(param) || '');
+    // Populate tracking fields directly using their technical parameter names
+    paramsToCapture.forEach(function(param) {
+        let value = '';
+        try {
+            value = sessionStorage.getItem(param) || '';
+        } catch (e) {}
+        populateField(param, value);
     });
 
-    populateField('Conversion Page', window.location.href);
-    populateField('Referrer', document.referrer);
-    populateField('Screen Size', window.screen.width + 'x' + window.screen.height);
-    populateField('User Agent', navigator.userAgent);
+    let landingPage = '';
+    try {
+        landingPage = sessionStorage.getItem('landing_page') || '';
+    } catch (e) {}
+    
+    populateField('landing_page', landingPage);
+    populateField('conversion_page', window.location.href);
+    populateField('referrer', document.referrer);
+    populateField('screen_size', window.screen.width + 'x' + window.screen.height);
+    populateField('user_agent', navigator.userAgent);
 
-    document.querySelectorAll('.wpcf7-form').forEach(form => {
+    document.querySelectorAll('.wpcf7-form, .quote-form').forEach(form => {
         form.addEventListener('submit', function() {
-            const startTime = parseInt(sessionStorage.getItem('session_start_time') || Date.now());
+            let startTime = Date.now();
+            try {
+                startTime = parseInt(sessionStorage.getItem('session_start_time') || Date.now());
+            } catch (e) {}
             const timeOnSiteSeconds = Math.round((Date.now() - startTime) / 1000);
-            populateField('Time on Site', timeOnSiteSeconds + ' seconds');
-            populateField('Submission Timestamp', new Date().toLocaleString());
+            populateField('time_on_site', timeOnSiteSeconds + ' seconds');
+            populateField('submission_timestamp', new Date().toLocaleString());
         });
     });
 });

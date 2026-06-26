@@ -704,6 +704,75 @@
       .trust-bar__grid { grid-template-columns: 1fr; }
     }
   </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paramsToCapture = ['gclid', 'msclkid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Save URL parameters to sessionStorage safely
+    paramsToCapture.forEach(function(param) {
+        if (urlParams.has(param)) {
+            try {
+                sessionStorage.setItem(param, urlParams.get(param));
+            } catch (e) {
+                console.warn('sessionStorage is not accessible:', e);
+            }
+        }
+    });
+
+    // Save landing page and session start time safely
+    try {
+        if (!sessionStorage.getItem('landing_page')) {
+            sessionStorage.setItem('landing_page', window.location.href);
+        }
+        if (!sessionStorage.getItem('session_start_time')) {
+            sessionStorage.setItem('session_start_time', Date.now());
+        }
+    } catch (e) {
+        console.warn('sessionStorage is not accessible:', e);
+    }
+
+    const populateField = (name, value) => {
+        if (value) {
+            document.querySelectorAll('input[name="' + name + '"], textarea[name="' + name + '"]').forEach(input => {
+                input.value = value;
+            });
+        }
+    };
+
+    // Populate tracking fields directly using their technical parameter names
+    paramsToCapture.forEach(function(param) {
+        let value = '';
+        try {
+            value = sessionStorage.getItem(param) || '';
+        } catch (e) {}
+        populateField(param, value);
+    });
+
+    let landingPage = '';
+    try {
+        landingPage = sessionStorage.getItem('landing_page') || '';
+    } catch (e) {}
+    
+    populateField('landing_page', landingPage);
+    populateField('conversion_page', window.location.href);
+    populateField('referrer', document.referrer);
+    populateField('screen_size', window.screen.width + 'x' + window.screen.height);
+    populateField('user_agent', navigator.userAgent);
+
+    document.querySelectorAll('.wpcf7-form, .quote-form').forEach(form => {
+        form.addEventListener('submit', function() {
+            let startTime = Date.now();
+            try {
+                startTime = parseInt(sessionStorage.getItem('session_start_time') || Date.now());
+            } catch (e) {}
+            const timeOnSiteSeconds = Math.round((Date.now() - startTime) / 1000);
+            populateField('time_on_site', timeOnSiteSeconds + ' seconds');
+            populateField('submission_timestamp', new Date().toLocaleString());
+        });
+    });
+});
+</script>
 </head>
 <body>
 
@@ -778,7 +847,7 @@
         </div>
       </div>
       <div class="hero__form-wrapper">
-        <form class="hero__form quote-form" id="hero-quote-form" aria-label="Request a free quote">
+        <form class="hero__form quote-form" id="hero-quote-form" name="l-hero-quote" data-netlify="true" method="POST" aria-label="Request a free quote">
           <div class="quote-form__header">
             <h2 class="quote-form__title">Get Your Free Quote</h2>
             <p class="quote-form__subtitle">in Under 60 Seconds</p>
@@ -811,7 +880,24 @@
           </div>
           <button type="submit" class="btn btn--primary btn--full">GET MY FREE QUOTE →</button>
           <p class="quote-form__privacy">🔒 No spam. No obligation. Your info is safe.</p>
-        </form>
+        
+          <!-- Netlify form technical hidden tracking fields -->
+          <input type="hidden" name="gclid" value="" />
+          <input type="hidden" name="msclkid" value="" />
+          <input type="hidden" name="fbclid" value="" />
+          <input type="hidden" name="utm_source" value="" />
+          <input type="hidden" name="utm_medium" value="" />
+          <input type="hidden" name="utm_campaign" value="" />
+          <input type="hidden" name="utm_term" value="" />
+          <input type="hidden" name="utm_content" value="" />
+          <input type="hidden" name="landing_page" value="" />
+          <input type="hidden" name="conversion_page" value="" />
+          <input type="hidden" name="referrer" value="" />
+          <input type="hidden" name="screen_size" value="" />
+          <input type="hidden" name="user_agent" value="" />
+          <input type="hidden" name="time_on_site" value="" />
+          <input type="hidden" name="submission_timestamp" value="" />
+</form>
       </div>
     </div>
   </section>
@@ -1298,7 +1384,7 @@
       <button class="modal-close" id="modal-close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <form class="quote-form" id="modal-quote-form" aria-label="Request a free quote">
+      <form class="quote-form" id="modal-quote-form" name="l-modal-quote" data-netlify="true" method="POST" aria-label="Request a free quote">
         <div class="quote-form__header">
           <h2 class="quote-form__title">Get Your Free Quote</h2>
           <p class="quote-form__subtitle">in Under 60 Seconds</p>
@@ -1331,7 +1417,24 @@
         </div>
         <button type="submit" class="btn btn--primary btn--full">GET MY FREE QUOTE →</button>
         <p class="quote-form__privacy">🔒 No spam. No obligation. Your info is safe.</p>
-      </form>
+      
+          <!-- Netlify form technical hidden tracking fields -->
+          <input type="hidden" name="gclid" value="" />
+          <input type="hidden" name="msclkid" value="" />
+          <input type="hidden" name="fbclid" value="" />
+          <input type="hidden" name="utm_source" value="" />
+          <input type="hidden" name="utm_medium" value="" />
+          <input type="hidden" name="utm_campaign" value="" />
+          <input type="hidden" name="utm_term" value="" />
+          <input type="hidden" name="utm_content" value="" />
+          <input type="hidden" name="landing_page" value="" />
+          <input type="hidden" name="conversion_page" value="" />
+          <input type="hidden" name="referrer" value="" />
+          <input type="hidden" name="screen_size" value="" />
+          <input type="hidden" name="user_agent" value="" />
+          <input type="hidden" name="time_on_site" value="" />
+          <input type="hidden" name="submission_timestamp" value="" />
+</form>
     </div>
   </div>
 
@@ -1504,21 +1607,38 @@
           else if (phone && phone.value.trim().replace(/\D/g, '').length < 10) { showError(phone, 'Please enter a valid phone number'); isValid = false; }
           if (email && email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { showError(email, 'Please enter a valid email address'); isValid = false; }
 
-          if (isValid) {
+                    if (isValid) {
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
               const originalText = submitBtn.textContent;
-              submitBtn.textContent = '✓ Quote Request Sent!';
+              submitBtn.textContent = '✓ Sending...';
               submitBtn.disabled = true;
-              submitBtn.style.opacity = '0.7';
 
-              setTimeout(function () {
-                submitBtn.textContent = originalText;
+              // Submit via AJAX to Netlify
+              const formData = new FormData(form);
+              formData.append('form-name', form.getAttribute('name'));
+
+              fetch('/', {
+                method: 'POST',
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(formData).toString()
+              })
+              .then(() => {
+                submitBtn.textContent = '✓ Quote Request Sent!';
+                submitBtn.style.opacity = '0.7';
+                setTimeout(function () {
+                  submitBtn.textContent = originalText;
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = '';
+                  form.reset();
+                  if (form.closest('.modal-content')) closeQuoteModal();
+                }, 3000);
+              })
+              .catch(err => {
+                console.error('Form submission failed:', err);
+                submitBtn.textContent = '✗ Error sending';
                 submitBtn.disabled = false;
-                submitBtn.style.opacity = '';
-                form.reset();
-                if (form.closest('.modal-content')) closeQuoteModal();
-              }, 3000);
+              });
             }
           }
         });
